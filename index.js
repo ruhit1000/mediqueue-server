@@ -2,6 +2,7 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const { createRemoteJWKSet, jwtVerify } = require('jose-cjs');
 dotenv.config();
 const app = express();
 app.use(cors());
@@ -14,6 +15,27 @@ const client = new MongoClient(process.env.MONGO_URI, {
         deprecationErrors: true,
     }
 })
+
+const JWKS = createRemoteJWKSet(
+    new URL(`${process.env.CLIENT_DOMAIN}/api/auth/jwks`)
+)
+
+const verifyToken = async (req, res, next) => {
+    const authHeader = req?.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send('Unauthorized');
+    }
+    const token = authHeader?.split(' ')[1];
+    if (!token) {
+        return res.status(401).send('Unauthorized');
+    }
+    try {
+        const {payload} = await jwtVerify(token, JWKS);
+        next();
+    } catch (error) {
+        return res.status(403).send('Forbidden');
+    }
+}
 
 const run = async () => {
     try {
@@ -35,7 +57,7 @@ const run = async () => {
             res.send(result);
         });
 
-        app.get('/featured-tutors', async (req, res) => {
+        app.get('/featured-tutors', verifyToken, async (req, res) => {
             const cursor = tutorsCollection.find().limit(6);
             const result = await cursor.toArray();
             res.send(result);
