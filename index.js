@@ -50,14 +50,14 @@ const run = async () => {
             res.send(result);
         })
 
-        app.get('/tutors/:tutorId', async (req, res) => {
+        app.get('/tutors/:tutorId', verifyToken, async (req, res) => {
             const {tutorId} = req.params;
             const query = {_id: new ObjectId(tutorId)};
             const result = await tutorsCollection.findOne(query);
             res.send(result);
         });
 
-        app.get('/featured-tutors', verifyToken, async (req, res) => {
+        app.get('/featured-tutors', async (req, res) => {
             const cursor = tutorsCollection.find().limit(6);
             const result = await cursor.toArray();
             res.send(result);
