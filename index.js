@@ -89,6 +89,29 @@ const run = async () => {
       res.send(result);
     });
 
+    app.delete("/bookings/:id", verifyToken, async (req, res) => {
+      const bookingId = req.params.id;
+      try {
+        const bookingQuery = {_id: new ObjectId(bookingId)};
+        const existingBooking = await bookingCollection.findOne(bookingQuery);
+
+        if (!existingBooking) {
+          return res.status(404).json({ error: "Booking not found." });
+        }
+
+        await tutorsCollection.updateOne(
+          { _id: new ObjectId(existingBooking.tutorId) },
+          {
+            $inc: { totalSlot: 1 },
+          }
+        );
+        const result = await bookingCollection.deleteOne(bookingQuery);
+        res.send(result);
+      } catch (error) {
+        return res.status(500).json({ error: "An error occurred while deleting the booking." });
+      }
+    })
+
     app.get("/bookings/:userId", verifyToken, async (req, res) => {
         const { userId } = req.params;
         const result = await bookingCollection.find({ userId: userId }).toArray();
