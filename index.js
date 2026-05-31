@@ -67,6 +67,12 @@ const run = async () => {
       res.send(result);
     });
 
+    app.get("/my-tutors/:userId", verifyToken, async (req, res) => {
+      const { userId } = req.params;
+      const result = await tutorsCollection.find({ userId: userId }).toArray();
+      res.send(result);
+    });
+
     app.post("/bookings/:tutorId", verifyToken, async (req, res) => {
       const { tutorId } = req.params;
       const bookingInfo = req.body;
