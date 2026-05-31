@@ -67,12 +67,6 @@ const run = async () => {
       res.send(result);
     });
 
-    app.get("/my-tutors/:userId", verifyToken, async (req, res) => {
-      const { userId } = req.params;
-      const result = await tutorsCollection.find({ userId: userId }).toArray();
-      res.send(result);
-    });
-
     app.post("/bookings/:tutorId", verifyToken, async (req, res) => {
       const { tutorId } = req.params;
       const bookingInfo = req.body;
@@ -98,7 +92,7 @@ const run = async () => {
     app.delete("/bookings/:id", verifyToken, async (req, res) => {
       const bookingId = req.params.id;
       try {
-        const bookingQuery = {_id: new ObjectId(bookingId)};
+        const bookingQuery = { _id: new ObjectId(bookingId) };
         const existingBooking = await bookingCollection.findOne(bookingQuery);
 
         if (!existingBooking) {
@@ -109,25 +103,69 @@ const run = async () => {
           { _id: new ObjectId(existingBooking.tutorId) },
           {
             $inc: { totalSlot: 1 },
-          }
+          },
         );
         const result = await bookingCollection.deleteOne(bookingQuery);
         res.send(result);
       } catch (error) {
-        return res.status(500).json({ error: "An error occurred while deleting the booking." });
+        return res
+          .status(500)
+          .json({ error: "An error occurred while deleting the booking." });
       }
-    })
+    });
 
     app.get("/bookings/:userId", verifyToken, async (req, res) => {
-        const { userId } = req.params;
-        const result = await bookingCollection.find({ userId: userId }).toArray();
-        res.send(result);
+      const { userId } = req.params;
+      const result = await bookingCollection.find({ userId: userId }).toArray();
+      res.send(result);
     });
 
     app.get("/featured-tutors", async (req, res) => {
       const cursor = tutorsCollection.find().limit(6);
       const result = await cursor.toArray();
       res.send(result);
+    });
+
+    app.get("/my-tutors/:userId", verifyToken, async (req, res) => {
+      const { userId } = req.params;
+      const result = await tutorsCollection.find({ userId: userId }).toArray();
+      res.send(result);
+    });
+
+    app.delete("/tutors/:id", verifyToken, async (req, res) => {
+      const tutorId = req.params.id;
+      try {
+        const tutorQuery = {_id: new ObjectId(tutorId) };
+        const existingTutor = await tutorsCollection.findOne(tutorQuery);
+
+        if (!existingTutor) {
+          return res.status(404).json({ error: "Tutor not found." });
+        }
+        const result = await tutorsCollection.deleteOne(tutorQuery);
+        res.send(result);
+      } catch (error) {
+        return res
+          .status(500)
+          .json({ error: "An error occurred while deleting the tutor." });
+      }
+    })
+
+    app.put("/tutors/:id", verifyToken, async (req, res) => {
+      const tutorId = req.params.id;
+      const updatedTutor = req.body;
+      try {
+        const tutorQuery = { _id: new ObjectId(tutorId) };
+        const existingTutor = await tutorsCollection.findOne(tutorQuery);
+        if (!existingTutor) {
+          return res.status(404).json({ error: "Tutor not found." });
+        }
+        const result = await tutorsCollection.updateOne(tutorQuery, { $set: updatedTutor });
+        res.send(result);
+      } catch (error) {
+        return res
+          .status(500)
+          .json({ error: "An error occurred while updating the tutor." });
+      }
     });
 
     console.log(
