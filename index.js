@@ -75,7 +75,7 @@ const run = async () => {
         _id: new ObjectId(tutorId),
       });
       if (!tutorQuery) {
-        return res.status(404).json({ error: "Tutor not found. Please check the tutor ID." });
+        return res.status(404).json({ error: "Tutor not found." });
       }
 
       await tutorsCollection.updateOne(
@@ -87,6 +87,12 @@ const run = async () => {
 
       const result = await bookingCollection.insertOne(bookingInfo);
       res.send(result);
+    });
+
+    app.get("/bookings/:userId", verifyToken, async (req, res) => {
+        const { userId } = req.params;
+        const result = await bookingCollection.find({ userId: userId }).toArray();
+        res.send(result);
     });
 
     app.get("/featured-tutors", async (req, res) => {
