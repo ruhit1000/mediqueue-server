@@ -48,8 +48,18 @@ const run = async () => {
 
     app.get("/tutors", async (req, res) => {
       const { search } = req.query;
-
-      const cursor = tutorsCollection.find();
+      
+      let cursor;
+      if (search) {
+        cursor = tutorsCollection.find({
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { subjects: { $regex: search, $options: "i" } },
+          ],
+        });
+      } else {
+        cursor = tutorsCollection.find();
+      }
       const result = await cursor.toArray();
       res.send(result);
     });
