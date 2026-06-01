@@ -40,7 +40,7 @@ const verifyToken = async (req, res, next) => {
 
 const run = async () => {
   try {
-    await client.connect();
+    // await client.connect();
     // await client.db("admin").command({ ping: 1 });
     const db = client.db("mediqueuedb");
     const tutorsCollection = db.collection("tutors");
