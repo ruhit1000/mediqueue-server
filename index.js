@@ -9,6 +9,16 @@ app.use(cors());
 app.use(express.json());
 const port = process.env.PORT || 5000;
 
+const nodemailer = require("nodemailer");
+
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+  },
+});
+
 const client = new MongoClient(process.env.MONGO_URI, {
   serverApi: {
     version: ServerApiVersion.v1,
@@ -48,7 +58,7 @@ const run = async () => {
 
     app.get("/tutors", async (req, res) => {
       const { search } = req.query;
-      
+
       let cursor;
       if (search) {
         cursor = tutorsCollection.find({
@@ -145,7 +155,7 @@ const run = async () => {
     app.delete("/tutors/:id", verifyToken, async (req, res) => {
       const tutorId = req.params.id;
       try {
-        const tutorQuery = {_id: new ObjectId(tutorId) };
+        const tutorQuery = { _id: new ObjectId(tutorId) };
         const existingTutor = await tutorsCollection.findOne(tutorQuery);
 
         if (!existingTutor) {
@@ -158,7 +168,7 @@ const run = async () => {
           .status(500)
           .json({ error: "An error occurred while deleting the tutor." });
       }
-    })
+    });
 
     app.put("/tutors/:id", verifyToken, async (req, res) => {
       const tutorId = req.params.id;
@@ -169,12 +179,43 @@ const run = async () => {
         if (!existingTutor) {
           return res.status(404).json({ error: "Tutor not found." });
         }
-        const result = await tutorsCollection.updateOne(tutorQuery, { $set: updatedTutor });
+        const result = await tutorsCollection.updateOne(tutorQuery, {
+          $set: updatedTutor,
+        });
         res.send(result);
       } catch (error) {
         return res
           .status(500)
           .json({ error: "An error occurred while updating the tutor." });
+      }
+    });
+
+    app.post("/api/send-email", async (req, res) => {
+      const { name, email } = req.body;
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: "Welcome to Mediqueue",
+        html: `
+    <h1>Welcome to Mediqueue</h1>
+    <p>Dear ${name},</p>
+    <p>Thank you for signing up for Mediqueue! We're excited to have you on board.</p>
+    <p>Best regards,</p>
+    <p>The Mediqueue Team</p>
+    `,
+      };
+
+      try {
+        await transporter.sendMail(mailOptions);
+        return res
+          .status(200)
+          .json({ success: true, message: "Email sent successfully" });
+      } catch (error) {
+        console.error("Error sending email:", error);
+        return res
+          .status(500)
+          .json({ success: false, error: "Failed to send email" });
       }
     });
 
